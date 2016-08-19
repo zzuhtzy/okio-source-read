@@ -19,6 +19,7 @@ import java.util.AbstractList;
 import java.util.RandomAccess;
 
 /** An indexed set of values that may be read with {@link BufferedSource#select}. */
+// 一个可以被BufferedSource#select读取的索引的集合
 public final class Options extends AbstractList<ByteString> implements RandomAccess {
   final ByteString[] byteStrings;
 
