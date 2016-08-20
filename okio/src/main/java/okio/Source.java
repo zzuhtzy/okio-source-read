@@ -23,21 +23,26 @@ import java.io.IOException;
  * it's located: from the network, storage, or a buffer in memory. Sources may
  * be layered to transform supplied data, such as to decompress, decrypt, or
  * remove protocol framing.
+ * 供应一个bytes流。从这个接口可以读入各处读入的数据。
  *
  * <p>Most applications shouldn't operate on a source directly, but rather on a
  * {@link BufferedSource} which is both more efficient and more convenient. Use
  * {@link Okio#buffer(Source)} to wrap any source with a buffer.
+ * 一般情况不使用该类，而是使用BufferedSource，更高效方便。
  *
  * <p>Sources are easy to test: just use a {@link Buffer} in your tests, and
  * fill it with the data your application is to read.
+ * 测试起来很简单，在test中使用Buffer。
  *
  * <h3>Comparison with InputStream</h3>
  * This interface is functionally equivalent to {@link java.io.InputStream}.
+ * 这个接口和InputStream功能相同。
  *
  * <p>{@code InputStream} requires multiple layers when consumed data is
  * heterogeneous: a {@code DataInputStream} for primitive values, a {@code
  * BufferedInputStream} for buffering, and {@code InputStreamReader} for
  * strings. This class uses {@code BufferedSource} for all of the above.
+ * BufferedSink可以统一解决DataInputStream、BufferedInputStream和InputStreamReader的问题。
  *
  * <p>Source avoids the impossible-to-implement {@linkplain
  * java.io.InputStream#available available()} method. Instead callers specify
@@ -64,7 +69,7 @@ public interface Source extends Closeable {
    * Removes at least 1, and up to {@code byteCount} bytes from this and appends
    * them to {@code sink}. Returns the number of bytes read, or -1 if this
    * source is exhausted.
-   * 1-byteCount -> sink
+   * 读入到sink，长度从1-byteCount
    */
   long read(Buffer sink, long byteCount) throws IOException;
 
@@ -74,6 +79,7 @@ public interface Source extends Closeable {
   /**
    * Closes this source and releases the resources held by this source. It is an
    * error to read a closed source. It is safe to close a source more than once.
+   * 关闭
    */
   @Override void close() throws IOException;
 }
