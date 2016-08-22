@@ -31,27 +31,33 @@ import static okio.Util.reverseBytesLong;
 
 /**
  * A collection of bytes in memory.
+ * 内存中bytes
  *
  * <p><strong>Moving data from one buffer to another is fast.</strong> Instead
  * of copying bytes from one place in memory to another, this class just changes
  * ownership of the underlying byte arrays.
+ * 不复制buffer，而是更改byte array所有权实现数据复制，速度快。
  *
  * <p><strong>This buffer grows with your data.</strong> Just like ArrayList,
  * each buffer starts small. It consumes only the memory it needs to.
+ * buffer随着data增长，就像ArrayList一样。只消耗需要长度的memory
  *
  * <p><strong>This buffer pools its byte arrays.</strong> When you allocate a
  * byte array in Java, the runtime must zero-fill the requested array before
  * returning it to you. Even if you're going to write over that space anyway.
  * This class avoids zero-fill and GC churn by pooling byte arrays.
+ * TODO 内存回收
  */
 public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   private static final byte[] DIGITS =
       { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+  // TODO 替换字符
   static final int REPLACEMENT_CHARACTER = '\ufffd';
 
   Segment head;
   long size;
 
+  // 本对象
   public Buffer() {
   }
 
@@ -61,11 +67,12 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     return size;
   }
 
+  // 返回this，buffer对象
   @Override public Buffer buffer() {
     return this;
   }
 
-  // 输出流
+  // 输出流，写文件
   @Override public OutputStream outputStream() {
     return new OutputStream() {
       @Override public void write(int b) {
@@ -88,19 +95,22 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     };
   }
 
+  // TODO
   @Override public Buffer emitCompleteSegments() {
     return this; // Nowhere to emit to!
   }
 
+  // TODO
   @Override public BufferedSink emit() {
     return this; // Nowhere to emit to!
   }
 
-  // 内容被消耗完
+  // 内容是否被消耗完
   @Override public boolean exhausted() {
     return size == 0;
   }
 
+  // 是够未被消耗内容足够长
   @Override public void require(long byteCount) throws EOFException {
     if (size < byteCount) throw new EOFException();
   }
@@ -113,6 +123,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   // 输入流
   @Override public InputStream inputStream() {
     return new InputStream() {
+      // 读一个byte以一个int形式返回
       @Override public int read() {
         if (size > 0) return readByte() & 0xff;
         return -1;
@@ -136,6 +147,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   }
 
   /** Copy the contents of this to {@code out}. */
+  // 把this拷贝到out
   public Buffer copyTo(OutputStream out) throws IOException {
     return copyTo(out, 0, size);
   }
@@ -207,7 +219,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   }
 
   /** Write {@code byteCount} bytes from this to {@code out}. */
-  // 输出到out，长度位byteCount
+  // 输出到out，长度为byteCount
   public Buffer writeTo(OutputStream out, long byteCount) throws IOException {
     if (out == null) throw new IllegalArgumentException("out == null");
     checkOffsetAndCount(size, 0, byteCount);
@@ -246,6 +258,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     return this;
   }
 
+  // TODO 持续读
   private void readFrom(InputStream in, long byteCount, boolean forever) throws IOException {
     if (in == null) throw new IllegalArgumentException("in == null");
     while (byteCount > 0 || forever) {
@@ -266,7 +279,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
    * Returns the number of bytes in segments that are not writable. This is the
    * number of bytes that can be flushed immediately to an underlying sink
    * without harming throughput.
-   * 返回segments中不可写bytes的数量
+   * 返回segments中不可写bytes的数量，可以立刻不用读取数据就可以向目标写数据的数量。读缓存
    */
   public long completeSegmentByteCount() {
     long result = size;
@@ -344,6 +357,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     return (short) s;
   }
 
+  // read int
   @Override public int readInt() {
     if (size < 4) throw new IllegalStateException("size < 4: " + size);
 
@@ -376,6 +390,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     return i;
   }
 
+  // read long
   @Override public long readLong() {
     if (size < 8) throw new IllegalStateException("size < 8: " + size);
 
