@@ -29,6 +29,7 @@ final class Base64 {
   // 解码String -> byte[]
   public static byte[] decode(String in) {
     // Ignore trailing '=' padding and whitespace from the input.
+    // 忽略末尾的'='空白
     int limit = in.length();
     for (; limit > 0; limit--) {
       char c = in.charAt(limit - 1);
@@ -38,6 +39,7 @@ final class Base64 {
     }
 
     // If the input includes whitespace, this output array will be longer than necessary.
+    // 如果输入包含空字符，输出将比必要的长
     byte[] out = new byte[(int) (limit * 6L / 8L)];
     int outCount = 0;
     int inCount = 0;
@@ -47,6 +49,7 @@ final class Base64 {
       char c = in.charAt(pos);
 
       int bits;
+      // 转换
       if (c >= 'A' && c <= 'Z') {
         // char ASCII value
         //  A    65    0
@@ -73,6 +76,7 @@ final class Base64 {
       }
 
       // Append this char's 6 bits to the word.
+      // 将char的6位追加到word中
       word = (word << 6) | (byte) bits;
 
       // For every 4 chars of input, we accumulate 24 bits of output. Emit 3 bytes.
@@ -100,6 +104,7 @@ final class Base64 {
     }
 
     // If we sized our out array perfectly, we're done.
+    // 长度刚好
     if (outCount == out.length) return out;
 
     // Copy the decoded bytes to a new, right-sized array.
@@ -130,7 +135,7 @@ final class Base64 {
     return encode(in, URL_MAP);
   }
 
-  // 编码byte[] -> String
+  // 编码，映射，byte[] -> String
   private static String encode(byte[] in, byte[] map) {
     int length = (in.length + 2) / 3 * 4;
     byte[] out = new byte[length];
@@ -141,6 +146,7 @@ final class Base64 {
       out[index++] = map[((in[i + 1] & 0x0f) << 2) | ((in[i + 2] & 0xff) >> 6)];
       out[index++] = map[(in[i + 2] & 0x3f)];
     }
+    // 长度不能被3整除，剩余处理
     switch (in.length % 3) {
       case 1:
         out[index++] = map[(in[end] & 0xff) >> 2];
