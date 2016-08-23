@@ -33,6 +33,7 @@ import static okio.Util.checkOffsetAndCount;
 
 /**
  * An immutable sequence of bytes.
+ * bytes不可变长序列
  *
  * <p>Byte strings compare lexicographically as a sequence of <strong>unsigned</strong> bytes. That
  * is, the byte string {@code ff} sorts after {@code 00}. This is counter to the sort order of the
@@ -62,7 +63,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
 
   /**
    * Returns a new byte string containing a clone of the bytes of {@code data}.
-   * 拷贝data
+   * byte->ByteString
    */
   public static ByteString of(byte... data) {
     if (data == null) throw new IllegalArgumentException("data == null");
@@ -72,7 +73,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   /**
    * Returns a new byte string containing a copy of {@code byteCount} bytes of {@code data} starting
    * at {@code offset}.
-   * data -> copy拷贝byteCount长度，返回ByteString
+   * data从offset开始，截取byteCount长，创建ByteString
    */
   public static ByteString of(byte[] data, int offset, int byteCount) {
     if (data == null) throw new IllegalArgumentException("data == null");
@@ -84,7 +85,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   }
 
   /** Returns a new byte string containing the {@code UTF-8} bytes of {@code s}. */
-  // String -> ByteString转换
+  // String创建ByteString
   public static ByteString encodeUtf8(String s) {
     if (s == null) throw new IllegalArgumentException("s == null");
     ByteString byteString = new ByteString(s.getBytes(Util.UTF_8));
@@ -93,7 +94,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   }
 
   /** Constructs a new {@code String} by decoding the bytes as {@code UTF-8}. */
-  // get utf8
+  // 获取utf8串
   public String utf8() {
     String result = utf8;
     // We don't care if we double-allocate in racy code.
@@ -125,7 +126,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
     return digest("SHA-256");
   }
 
-  // data转换
+  // data->ByteString
   private ByteString digest(String algorithm) {
     try {
       return ByteString.of(MessageDigest.getInstance(algorithm).digest(data));
@@ -137,7 +138,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   /**
    * Returns this byte string encoded as <a href="http://www.ietf.org/rfc/rfc4648.txt">URL-safe
    * Base64</a>.
-   * 返回url safe
+   * data->String(URL)
    */
   public String base64Url() {
     return Base64.encodeUrl(data);
@@ -146,7 +147,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   /**
    * Decodes the Base64-encoded bytes and returns their value as a byte string.
    * Returns null if {@code base64} is not a Base64-encoded sequence of bytes.
-   * 解码base64
+   * string(base64)->ByteString
    */
   public static ByteString decodeBase64(String base64) {
     if (base64 == null) throw new IllegalArgumentException("base64 == null");
@@ -155,7 +156,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   }
 
   /** Returns this byte string encoded in hexadecimal. */
-  // byte -> 0x
+  // byte -> String(0x，十六进制)
   public String hex() {
     char[] result = new char[data.length * 2];
     int c = 0;
@@ -167,7 +168,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
   }
 
   /** Decodes the hex-encoded bytes and returns their value a byte string. */
-  // 解码十六进制
+  // string(十六进制)->ByteString
   public static ByteString decodeHex(String hex) {
     if (hex == null) throw new IllegalArgumentException("hex == null");
     if (hex.length() % 2 != 0) throw new IllegalArgumentException("Unexpected hex string: " + hex);
@@ -181,7 +182,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
     return of(result);
   }
 
-  // 解码char -> int
+  // 解码char -> int(字母和数字)
   private static int decodeHexDigit(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -194,7 +195,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
    *
    * @throws java.io.EOFException if {@code in} has fewer than {@code count}
    *     bytes to read.
-   * 从in读count位
+   * 从in读byteCount位
    */
   public static ByteString read(InputStream in, int byteCount) throws IOException {
     if (in == null) throw new IllegalArgumentException("in == null");
@@ -213,7 +214,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
    * through 'Z' replaced with the corresponding byte in 'a' through 'z'.
    * Returns this byte string if it contains no bytes in 'A' through 'Z'.
    * 大写转小写
-   * TODO 这里写法没看懂，好神奇
+   * TODO 实现没看懂
    */
   public ByteString toAsciiLowercase() {
     // Search for an uppercase character. If we don't find one, return this.
@@ -240,6 +241,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
    * through 'z' replaced with the corresponding byte in 'A' through 'Z'.
    * Returns this byte string if it contains no bytes in 'a' through 'z'.
    * 转成大写
+   * TODO 实现没看懂
    */
   public ByteString toAsciiUppercase() {
     // Search for an lowercase character. If we don't find one, return this.
@@ -356,7 +358,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
    * Returns true if the bytes of this in {@code [offset..offset+byteCount)} equal the bytes of
    * {@code other} in {@code [otherOffset..otherOffset+byteCount)}. Returns false if either range is
    * out of bounds.
-   * offset到offset+byteCount相等
+   * this和other指定位置和长度是否相等
    */
   public boolean rangeEquals(int offset, byte[] other, int otherOffset, int byteCount) {
     return offset >= 0 && offset <= data.length - byteCount
@@ -427,7 +429,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
     return -1;
   }
 
-  // 包含的内容相等
+  // 包含的内容是否相等，对象不一定相等
   @Override public boolean equals(Object o) {
     if (o == this) return true;
     return o instanceof ByteString
@@ -440,7 +442,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
     return result != 0 ? result : (hashCode = Arrays.hashCode(data));
   }
 
-  // 判断大小
+  // 比较大小
   @Override public int compareTo(ByteString byteString) {
     int sizeA = size();
     int sizeB = byteString.size();
@@ -481,6 +483,7 @@ public class ByteString implements Serializable, Comparable<ByteString> {
         : "[text=" + safeText + "]";
   }
 
+  // TODO
   static int codePointIndexToCharIndex(String s, int codePointCount) {
     for (int i = 0, j = 0, length = s.length(), c; i < length; i += Character.charCount(c)) {
       if (j == codePointCount) {
