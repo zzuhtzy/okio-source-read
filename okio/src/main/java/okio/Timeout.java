@@ -26,26 +26,33 @@ import java.util.concurrent.TimeUnit;
  * example, if reading from a source times out, that source should be closed and
  * the read should be retried later. If writing to a sink times out, the same
  * rules apply: close the sink and retry later.
+ * 一个任务在放弃前话费多少时间的决策。当一个任务超时，这个任务被设置成未知状态，应该被遗弃。例如，
+ * 一个从源读数据超时，这个源应该被关闭，随后重试。写同样，关闭sink，随后重试。
  *
  * <h3>Timeouts and Deadlines</h3>
  * This class offers two complementary controls to define a timeout policy.
+ * 提供两种互补的控制来定义一个超时的策略。
  *
  * <p><strong>Timeouts</strong> specify the maximum time to wait for a single
  * operation to complete. Timeouts are typically used to detect problems like
  * network partitions. For example, if a remote peer doesn't return <i>any</i>
  * data for ten seconds, we may assume that the peer is unavailable.
+ * Timeouts定义了最大的时间等待单一的操作。典型的就是网络操作。例如一个远程连接10s后没有返
+ * 回任何数据，我们可能断定这个连接不可达。
  *
  * <p><strong>Deadlines</strong> specify the maximum time to spend on a job,
  * composed of one or more operations. Use deadlines to set an upper bound on
  * the time invested on a job. For example, a battery-conscious app may limit
  * how much time it spends pre-loading content.
+ * Deadlines定义了一个工作(很多单一操作组成)花费的最长时间。使用deadlines设置一个工作花费
+ * 的上限。例如，一个电池管理的应用可能限制预加载内容的时间。
  */
 public class Timeout {
   /**
    * An empty timeout that neither tracks nor detects timeouts. Use this when
    * timeouts aren't necessary, such as in implementations whose operations
    * do not block.
-   * 无Timeout
+   * 无Timeout，不需要timeout时
    */
   public static final Timeout NONE = new Timeout() {
     @Override public Timeout timeout(long timeout, TimeUnit unit) {
@@ -63,6 +70,7 @@ public class Timeout {
   /**
    * True if {@code deadlineNanoTime} is defined. There is no equivalent to null
    * or 0 for {@link System#nanoTime}.
+   * 如果deadlineNanoTime被定义了，true，与System.nanoTime的null或0不同。
    */
   private boolean hasDeadline;
   private long deadlineNanoTime;
@@ -78,21 +86,25 @@ public class Timeout {
    *
    * <p>If {@code timeout == 0}, operations will run indefinitely. (Operating
    * system timeouts may still apply.)
-   * 设置超时时间
+   * TODO 放弃一个操作前等待最长timeout时间，使用每个操作超时意味着只要进程在运行，没有操作将失败。
+   * 如果timeout == 0，操作将无限期的运行，使用系统超时的设置。
    */
   public Timeout timeout(long timeout, TimeUnit unit) {
     if (timeout < 0) throw new IllegalArgumentException("timeout < 0: " + timeout);
     if (unit == null) throw new IllegalArgumentException("unit == null");
+    // 时间戳转换
     this.timeoutNanos = unit.toNanos(timeout);
     return this;
   }
 
   /** Returns the timeout in nanoseconds, or {@code 0} for no timeout. */
+  // 返回超时时间，未设置超时时间返回0
   public long timeoutNanos() {
     return timeoutNanos;
   }
 
   /** Returns true if a deadline is enabled. */
+  // 如果deadline被定义了，返回true
   public boolean hasDeadline() {
     return hasDeadline;
   }
@@ -102,7 +114,7 @@ public class Timeout {
    * be reached.
    *
    * @throws IllegalStateException if no deadline is set.
-   * 获取deadlineNanoTime
+   * 返回deadlineNanoTime
    */
   public long deadlineNanoTime() {
     if (!hasDeadline) throw new IllegalStateException("No deadline");
@@ -122,7 +134,7 @@ public class Timeout {
   }
 
   /** Set a deadline of now plus {@code duration} time. */
-  // set deadline
+  // 设置deadline
   public final Timeout deadline(long duration, TimeUnit unit) {
     if (duration <= 0) throw new IllegalArgumentException("duration <= 0: " + duration);
     if (unit == null) throw new IllegalArgumentException("unit == null");
@@ -130,14 +142,14 @@ public class Timeout {
   }
 
   /** Clears the timeout. Operating system timeouts may still apply. */
-  // 清空timeout
+  // 取消timeout
   public Timeout clearTimeout() {
     this.timeoutNanos = 0;
     return this;
   }
 
   /** Clears the deadline. */
-  // 清空deadline
+  // 取消deadline
   public Timeout clearDeadline() {
     this.hasDeadline = false;
     return this;
@@ -147,6 +159,7 @@ public class Timeout {
    * Throws an {@link InterruptedIOException} if the deadline has been reached or if the current
    * thread has been interrupted. This method doesn't detect timeouts; that should be implemented to
    * asynchronously abort an in-progress operation.
+   * 到达deadline或者是进程被打断，抛出异常。这个方法不检查超时。
    */
   public void throwIfReached() throws IOException {
     if (Thread.interrupted()) {
@@ -193,18 +206,23 @@ public class Timeout {
    *     }
    *   }
    * }</pre>
+   *
+   * 一直等待，直到被通知。如果这个进程被大点，或者时间被耗尽，抛出异常，nonitor必须是同步的。
    */
   public final void waitUntilNotified(Object monitor) throws InterruptedIOException {
     try {
+      // 初始化
       boolean hasDeadline = hasDeadline();
       long timeoutNanos = timeoutNanos();
 
+      // 没有超时，永远等待
       if (!hasDeadline && timeoutNanos == 0L) {
         monitor.wait(); // There is no timeout: wait forever.
         return;
       }
 
       // Compute how long we'll wait.
+      // 计算需要等待多久
       long waitNanos;
       long start = System.nanoTime();
       if (hasDeadline && timeoutNanos != 0) {
@@ -217,6 +235,7 @@ public class Timeout {
       }
 
       // Attempt to wait that long. This will break out early if the monitor is notified.
+      // 尝试等待那么久，如果提前被通知，这个将被唤醒。
       long elapsedNanos = 0L;
       if (waitNanos > 0L) {
         long waitMillis = waitNanos / 1000000L;
@@ -225,6 +244,7 @@ public class Timeout {
       }
 
       // Throw if the timeout elapsed before the monitor was notified.
+      // 如果时间被耗尽了，抛出异常
       if (elapsedNanos >= waitNanos) {
         throw new InterruptedIOException("timeout");
       }
