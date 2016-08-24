@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+// 没有缓存，写后会调用flush()
 final class RealBufferedSink implements BufferedSink {
   public final Buffer buffer = new Buffer();
   public final Sink sink;
   boolean closed;
 
+  // 创建对象
   RealBufferedSink(Sink sink) {
     if (sink == null) throw new NullPointerException("sink == null");
     this.sink = sink;
@@ -173,6 +175,7 @@ final class RealBufferedSink implements BufferedSink {
     return this;
   }
 
+  // 写数据
   @Override public BufferedSink emit() throws IOException {
     if (closed) throw new IllegalStateException("closed");
     long byteCount = buffer.size();
@@ -180,6 +183,7 @@ final class RealBufferedSink implements BufferedSink {
     return this;
   }
 
+  // 输出流
   @Override public OutputStream outputStream() {
     return new OutputStream() {
       @Override public void write(int b) throws IOException {

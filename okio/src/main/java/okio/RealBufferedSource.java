@@ -36,6 +36,7 @@ final class RealBufferedSource implements BufferedSource {
     return buffer;
   }
 
+  // 读数据
   @Override public long read(Buffer sink, long byteCount) throws IOException {
     if (sink == null) throw new IllegalArgumentException("sink == null");
     if (byteCount < 0) throw new IllegalArgumentException("byteCount < 0: " + byteCount);
@@ -50,11 +51,13 @@ final class RealBufferedSource implements BufferedSource {
     return buffer.read(sink, toRead);
   }
 
+  // 没有数据了，数据读完了
   @Override public boolean exhausted() throws IOException {
     if (closed) throw new IllegalStateException("closed");
     return buffer.exhausted() && source.read(buffer, Segment.SIZE) == -1;
   }
 
+  // 请求数据
   @Override public void require(long byteCount) throws IOException {
     if (!request(byteCount)) throw new EOFException();
   }
@@ -68,6 +71,7 @@ final class RealBufferedSource implements BufferedSource {
     return true;
   }
 
+  // 读数据
   @Override public byte readByte() throws IOException {
     require(1);
     return buffer.readByte();
@@ -298,6 +302,7 @@ final class RealBufferedSource implements BufferedSource {
     return buffer.readHexadecimalUnsignedLong();
   }
 
+  // 跳过
   @Override public void skip(long byteCount) throws IOException {
     if (closed) throw new IllegalStateException("closed");
     while (byteCount > 0) {
@@ -310,10 +315,12 @@ final class RealBufferedSource implements BufferedSource {
     }
   }
 
+  // 以b开头开始位置
   @Override public long indexOf(byte b) throws IOException {
     return indexOf(b, 0);
   }
 
+  // 从fromIndex开始查找，b开头开始位置
   @Override public long indexOf(byte b, long fromIndex) throws IOException {
     if (closed) throw new IllegalStateException("closed");
 
@@ -367,6 +374,7 @@ final class RealBufferedSource implements BufferedSource {
     }
   }
 
+  // TODO 
   @Override public boolean rangeEquals(long offset, ByteString bytes) throws IOException {
     return rangeEquals(offset, bytes, 0, bytes.size());
   }
@@ -390,6 +398,7 @@ final class RealBufferedSource implements BufferedSource {
     return true;
   }
 
+  // 输入流
   @Override public InputStream inputStream() {
     return new InputStream() {
       @Override public int read() throws IOException {
