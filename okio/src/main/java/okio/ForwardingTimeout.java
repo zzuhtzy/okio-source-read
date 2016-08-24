@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /** A {@link Timeout} which forwards calls to another. Useful for subclassing. */
+// 转发，对子类有用
 public class ForwardingTimeout extends Timeout {
   private Timeout delegate;
 

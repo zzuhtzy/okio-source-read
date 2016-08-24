@@ -64,6 +64,7 @@ public final class HashingSink extends ForwardingSink {
     }
   }
 
+  // 写数据
   @Override public void write(Buffer source, long byteCount) throws IOException {
     checkOffsetAndCount(source.size, 0, byteCount);
 
@@ -84,6 +85,7 @@ public final class HashingSink extends ForwardingSink {
    *
    * <p><strong>Warning:</strong> This method is not idempotent. Each time this method is called its
    * internal state is cleared. This starts a new hash with zero bytes accepted.
+   * hash
    */
   public ByteString hash() {
     byte[] result = messageDigest.digest();

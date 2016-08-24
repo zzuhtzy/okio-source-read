@@ -62,6 +62,7 @@ public final class HashingSource extends ForwardingSource {
     }
   }
 
+  // 读数据
   @Override public long read(Buffer sink, long byteCount) throws IOException {
     long result = super.read(sink, byteCount);
 
@@ -94,6 +95,7 @@ public final class HashingSource extends ForwardingSource {
    *
    * <p><strong>Warning:</strong> This method is not idempotent. Each time this method is called its
    * internal state is cleared. This starts a new hash with zero bytes supplied.
+   * hash
    */
   public ByteString hash() {
     byte[] result = messageDigest.digest();
