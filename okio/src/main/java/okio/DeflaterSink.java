@@ -34,6 +34,7 @@ import static okio.Util.checkOffsetAndCount;
  * <p>This is equivalent to using {@link Deflater} with the sync flush option.
  * This class does not offer any partial flush mechanism. For best performance,
  * only call {@link #flush} when application behavior requires it.
+ * 压缩数据，zlib，png格式
  */
 public final class DeflaterSink implements Sink {
   private final BufferedSink sink;
@@ -48,6 +49,7 @@ public final class DeflaterSink implements Sink {
    * This package-private constructor shares a buffer with its trusted caller.
    * In general we can't share a BufferedSource because the deflater holds input
    * bytes until they are inflated.
+   * 创建对象
    */
   DeflaterSink(BufferedSink sink, Deflater deflater) {
     if (sink == null) throw new IllegalArgumentException("source == null");
@@ -56,6 +58,7 @@ public final class DeflaterSink implements Sink {
     this.deflater = deflater;
   }
 
+  // 写数据
   @Override public void write(Buffer source, long byteCount) throws IOException {
     checkOffsetAndCount(source.size, 0, byteCount);
     while (byteCount > 0) {
@@ -79,6 +82,7 @@ public final class DeflaterSink implements Sink {
     }
   }
 
+  // 压缩
   @IgnoreJRERequirement
   private void deflate(boolean syncFlush) throws IOException {
     Buffer buffer = sink.buffer();
@@ -113,6 +117,7 @@ public final class DeflaterSink implements Sink {
     sink.flush();
   }
 
+  // 结束
   void finishDeflate() throws IOException {
     deflater.finish();
     deflate(false);

@@ -23,7 +23,7 @@ import java.util.zip.Inflater;
 /**
  * A source that uses <a href="http://tools.ietf.org/html/rfc1951">DEFLATE</a>
  * to decompress data read from another source.
- * DEFLATE压缩，解压缩数据
+ * 解压缩数据，zlib，png格式
  */
 public final class InflaterSource implements Source {
   private final BufferedSource source;
@@ -45,6 +45,7 @@ public final class InflaterSource implements Source {
    * This package-private constructor shares a buffer with its trusted caller.
    * In general we can't share a BufferedSource because the inflater holds input
    * bytes until they are inflated.
+   * 创建对象
    */
   InflaterSource(BufferedSource source, Inflater inflater) {
     if (source == null) throw new IllegalArgumentException("source == null");
@@ -53,6 +54,7 @@ public final class InflaterSource implements Source {
     this.inflater = inflater;
   }
 
+  // read
   @Override public long read(
       Buffer sink, long byteCount) throws IOException {
     if (byteCount < 0) throw new IllegalArgumentException("byteCount < 0: " + byteCount);
@@ -63,6 +65,7 @@ public final class InflaterSource implements Source {
       boolean sourceExhausted = refill();
 
       // Decompress the inflater's compressed data into the sink.
+      // 解压缩到sink中
       try {
         Segment tail = sink.writableSegment(1);
         int bytesInflated = inflater.inflate(tail.data, tail.limit, Segment.SIZE - tail.limit);
@@ -91,7 +94,7 @@ public final class InflaterSource implements Source {
    * Refills the inflater with compressed data if it needs input. (And only if
    * it needs input). Returns true if the inflater required input but the source
    * was exhausted.
-   * 没有数据返回true
+   * 在需要读数据时，重新读满数据。如果没有数据可读了，返回true
    */
   public boolean refill() throws IOException {
     if (!inflater.needsInput()) return false;
@@ -110,6 +113,7 @@ public final class InflaterSource implements Source {
   }
 
   /** When the inflater has processed compressed data, remove it from the buffer. */
+  // TODO 当已经处理完压缩数据，remove
   private void releaseInflatedBytes() throws IOException {
     if (bufferBytesHeldByInflater == 0) return;
     int toRelease = bufferBytesHeldByInflater - inflater.getRemaining();
