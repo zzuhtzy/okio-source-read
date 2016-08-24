@@ -24,35 +24,43 @@ import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
 /**
  * A sink that uses <a href="http://www.ietf.org/rfc/rfc1952.txt">GZIP</a> to
  * compress written data to another sink.
+ * 压缩已经写的数据到另外的sink
  *
  * <h3>Sync flush</h3>
  * Aggressive flushing of this stream may result in reduced compression. Each
  * call to {@link #flush} immediately compresses all currently-buffered data;
  * this early compression may be less effective than compression performed
  * without flushing.
+ * 同步刷新。早期持续调用flush可能导致压缩效果不如不调用flush好。
  *
  * <p>This is equivalent to using {@link Deflater} with the sync flush option.
  * This class does not offer any partial flush mechanism. For best performance,
  * only call {@link #flush} when application behavior requires it.
+ * 只在需要flush时才刷新
  */
 public final class GzipSink implements Sink {
   /** Sink into which the GZIP format is written. */
+  // 正在写哪种GZIP格式
   private final BufferedSink sink;
 
   /** The deflater used to compress the body. */
+  // 检查GZIP头，压缩数据
   private final Deflater deflater;
 
   /**
    * The deflater sink takes care of moving data between decompressed source and
    * compressed sink buffers.
+   * 小心的压缩，小心的移动未压缩数据到已经压缩的数据
    */
   private final DeflaterSink deflaterSink;
 
   private boolean closed;
 
   /** Checksum calculated for the compressed body. */
+  // 对于压缩的数据计算校验和(CRC)
   private final CRC32 crc = new CRC32();
 
+  // 初始化对象
   public GzipSink(Sink sink) {
     if (sink == null) throw new IllegalArgumentException("sink == null");
     this.deflater = new Deflater(DEFAULT_COMPRESSION, true /* No wrap */);
@@ -70,14 +78,17 @@ public final class GzipSink implements Sink {
     deflaterSink.write(source, byteCount);
   }
 
+  // 强制刷新
   @Override public void flush() throws IOException {
     deflaterSink.flush();
   }
 
+  // 超时
   @Override public Timeout timeout() {
     return sink.timeout();
   }
 
+  // close
   @Override public void close() throws IOException {
     if (closed) return;
 
@@ -118,6 +129,7 @@ public final class GzipSink implements Sink {
     return deflater;
   }
 
+  // 直接写头
   private void writeHeader() {
     // Write the Gzip header directly into the buffer for the sink to avoid handling IOException.
     Buffer buffer = this.sink.buffer();
@@ -129,12 +141,14 @@ public final class GzipSink implements Sink {
     buffer.writeByte(0x00); // No OS.
   }
 
+  // 写结尾
   private void writeFooter() throws IOException {
     sink.writeIntLe((int) crc.getValue()); // CRC of original data.
     sink.writeIntLe((int) deflater.getBytesRead()); // Length of original data.
   }
 
   /** Updates the CRC with the given bytes. */
+  // 修改CRC
   private void updateCrc(Buffer buffer, long byteCount) {
     for (Segment head = buffer.head; byteCount > 0; head = head.next) {
       int segmentLength = (int) Math.min(byteCount, head.limit - head.pos);

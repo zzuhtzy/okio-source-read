@@ -23,7 +23,7 @@ import java.util.zip.Inflater;
 /**
  * A source that uses <a href="http://www.ietf.org/rfc/rfc1952.txt">GZIP</a> to
  * decompress data read from another source.
- * 解压缩
+ * 解压缩冲其他源中读入的GZIP数据进行解压缩
  */
 public final class GzipSource implements Source {
   private static final byte FHCRC = 1;
@@ -37,27 +37,33 @@ public final class GzipSource implements Source {
   private static final byte SECTION_DONE = 3;
 
   /** The current section. Always progresses forward. */
+  // 当前的部分，SECTION_HEADER -> SECTION_BODY -> SECTION_TRAILER -> SECTION_DONE
   private int section = SECTION_HEADER;
 
   /**
    * Our source should yield a GZIP header (which we consume directly), followed
    * by deflated bytes (which we consume via an InflaterSource), followed by a
    * GZIP trailer (which we also consume directly).
+   * 我们的源去除GZIP的头，接着是数据，我们通过InflaterSource消耗掉header，也直接去除尾。
    */
   private final BufferedSource source;
 
   /** The inflater used to decompress the deflated body. */
+  // TODO
   private final Inflater inflater;
 
   /**
    * The inflater source takes care of moving data between compressed source and
    * decompressed sink buffers.
+   * 这个对象小心的在压缩的源和解压的输出间移动数据
    */
   private final InflaterSource inflaterSource;
 
   /** Checksum used to check both the GZIP header and decompressed body. */
+  // 检查GZIP头，解压数据
   private final CRC32 crc = new CRC32();
 
+  // 创建GZipSource对象
   public GzipSource(Source source) {
     if (source == null) throw new IllegalArgumentException("source == null");
     this.inflater = new Inflater(true);
@@ -70,12 +76,14 @@ public final class GzipSource implements Source {
     if (byteCount == 0) return 0;
 
     // If we haven't consumed the header, we must consume it before anything else.
+    // 如果还没有去除header，我们必须要将其去除掉
     if (section == SECTION_HEADER) {
       consumeHeader();
       section = SECTION_BODY;
     }
 
     // Attempt to read at least a byte of the body. If we do, we're done.
+    // 尝试至少读入1byte
     if (section == SECTION_BODY) {
       long offset = sink.size;
       long result = inflaterSource.read(sink, byteCount);
@@ -105,7 +113,12 @@ public final class GzipSource implements Source {
     return -1;
   }
 
-  // 消费Header
+  // 去除Header
+  // 10字节的头，包含幻数、版本号以及时间戳
+  // 可选的扩展头，如原文件名
+  // 文件体，包括DEFLATE压缩的数据
+  // 8字节的尾注，包括CRC-32校验和以及未压缩的原始数据长度
+  // https://zh.wikipedia.org/wiki/Gzip
   private void consumeHeader() throws IOException {
     // Read the 10-byte header. We peek at the flags byte first so we know if we
     // need to CRC the entire header. Then we read the magic ID1ID2 sequence.
@@ -113,6 +126,7 @@ public final class GzipSource implements Source {
     // +---+---+---+---+---+---+---+---+---+---+
     // |ID1|ID2|CM |FLG|     MTIME     |XFL|OS | (more-->)
     // +---+---+---+---+---+---+---+---+---+---+
+    // 10字节的头，包含幻数、版本号以及时间戳
     source.require(10);
     byte flags = source.buffer().getByte(3);
     boolean fhcrc = ((flags >> FHCRC) & 1) == 1;
@@ -126,6 +140,7 @@ public final class GzipSource implements Source {
     // +---+---+=================================+
     // | XLEN  |...XLEN bytes of "extra field"...| (more-->)
     // +---+---+=================================+
+    // 跳过额外可选字段
     if (((flags >> FEXTRA) & 1) == 1) {
       source.require(2);
       if (fhcrc) updateCrc(source.buffer(), 0, 2);
@@ -167,6 +182,7 @@ public final class GzipSource implements Source {
     }
   }
 
+  // 消耗文件尾
   private void consumeTrailer() throws IOException {
     // Read the eight-byte trailer. Confirm the body's CRC and size.
     // +---+---+---+---+---+---+---+---+
@@ -185,6 +201,7 @@ public final class GzipSource implements Source {
   }
 
   /** Updates the CRC with the given bytes. */
+  // TODO CRC相关
   private void updateCrc(Buffer buffer, long offset, long byteCount) {
     // Skip segments that we aren't checksumming.
     Segment s = buffer.head;
@@ -193,6 +210,7 @@ public final class GzipSource implements Source {
     }
 
     // Checksum one segment at a time.
+    // 校验和
     for (; byteCount > 0; s = s.next) {
       int pos = (int) (s.pos + offset);
       int toUpdate = (int) Math.min(s.limit - pos, byteCount);
@@ -202,6 +220,7 @@ public final class GzipSource implements Source {
     }
   }
 
+  // 检查expected是否等于actual
   private void checkEqual(String name, int expected, int actual) throws IOException {
     if (actual != expected) {
       throw new IOException(String.format(
