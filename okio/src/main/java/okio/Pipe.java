@@ -21,6 +21,7 @@ import java.io.IOException;
  * A source and a sink that are attached. The sink's output is the source's input. Typically each
  * is accessed by its own thread: a producer thread writes data to the sink and a consumer thread
  * reads data from the source.
+ * 有source和sink，sink的输出是source的输入。通常都是进程自己访问：生成者写到sink，消费者从source读。
  *
  * <p>This class uses a buffer to decouple source and sink. This buffer has a user-specified maximum
  * size. When a producer thread outruns its consumer the buffer fills up and eventually writes to
@@ -28,11 +29,12 @@ import java.io.IOException;
  * producer reads block until there is data to be read. Limits on the amount of time spent waiting
  * for the other party can be configured with {@linkplain Timeout timeouts} on the source and the
  * sink.
+ * 这个类使用buffer解耦source和sink。这个buffer有一个设置的最大值。互相等待。可以设置超时。
  *
  * <p>When the sink is closed, source reads will continue to complete normally until the buffer has
  * been exhausted. At that point reads will return -1, indicating the end of the stream. But if the
  * source is closed first, writes to the sink will immediately fail with an {@link IOException}.
- * 管道
+ * 当sink被关闭，source将继续吧数据读完，这时返回-1。相反，抛出IO异常。
  */
 public final class Pipe {
   final long maxBufferSize;
@@ -42,6 +44,7 @@ public final class Pipe {
   private final Sink sink = new PipeSink();
   private final Source source = new PipeSource();
 
+  // 初始化设置最大值
   public Pipe(long maxBufferSize) {
     if (maxBufferSize < 1L) {
       throw new IllegalArgumentException("maxBufferSize < 1: " + maxBufferSize);
@@ -49,14 +52,17 @@ public final class Pipe {
     this.maxBufferSize = maxBufferSize;
   }
 
+  // 获取source
   public Source source() {
     return source;
   }
 
+  // 获取sink
   public Sink sink() {
     return sink;
   }
 
+  // sink
   final class PipeSink implements Sink {
     final Timeout timeout = new Timeout();
 
