@@ -46,7 +46,8 @@ import static okio.Util.reverseBytesLong;
  * byte array in Java, the runtime must zero-fill the requested array before
  * returning it to you. Even if you're going to write over that space anyway.
  * This class avoids zero-fill and GC churn by pooling byte arrays.
- * TODO 内存回收
+ * 这个buffe管理者bytes array。当你在java中申请一块byte array，会全部初始化为0。这个类
+ * 避免垃圾初始化为0和垃圾回收。
  */
 public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   private static final byte[] DIGITS =
@@ -110,7 +111,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     return size == 0;
   }
 
-  // 是够未被消耗内容足够长
+  // 未被消耗内容是否足够长
   @Override public void require(long byteCount) throws EOFException {
     if (size < byteCount) throw new EOFException();
   }
@@ -163,12 +164,14 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     if (byteCount == 0) return this;
 
     // Skip segments that we aren't copying from.
+    // 跳过offset
     Segment s = head;
     for (; offset >= (s.limit - s.pos); s = s.next) {
       offset -= (s.limit - s.pos);
     }
 
     // Copy from one segment at a time.
+    // 
     for (; byteCount > 0; s = s.next) {
       int pos = (int) (s.pos + offset);
       int toCopy = (int) Math.min(s.limit - pos, byteCount);
@@ -279,7 +282,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
    * Returns the number of bytes in segments that are not writable. This is the
    * number of bytes that can be flushed immediately to an underlying sink
    * without harming throughput.
-   * 返回segments中不可写bytes的数量，可以立刻不用读取数据就可以向目标写数据的数量。读缓存
+   * TODO 返回segments中不可写bytes的数量，可以立刻不用读取数据就可以向目标写数据的数量。读缓存
    */
   public long completeSegmentByteCount() {
     long result = size;
@@ -582,6 +585,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
    * Returns the index of a value in {@code options} that is either the prefix of this buffer, or
    * that this buffer is a prefix of. Unlike {@link #select} this never consumes the value, even
    * if it is found in full.
+   * TODO
    */
   int selectPrefix(Options options) {
     Segment s = head;
@@ -834,7 +838,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   }
 
   /** Discards {@code byteCount} bytes from the head of this buffer. */
-  // 丢弃byteCount位
+  // 跳过byteCount位
   @Override public void skip(long byteCount) throws EOFException {
     while (byteCount > 0) {
       if (head == null) throw new EOFException();
