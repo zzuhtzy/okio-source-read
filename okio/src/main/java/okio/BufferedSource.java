@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
  * A source that keeps a buffer internally so that callers can do small reads without a performance
  * penalty. It also allows clients to read ahead, buffering as much as necessary before consuming
  * input.
+ * 
  */
 public interface BufferedSource extends Source {
   /** Returns this source's internal buffer. */
@@ -419,6 +420,7 @@ public interface BufferedSource extends Source {
   String readString(long byteCount, Charset charset) throws IOException;
 
   /** Equivalent to {@link #indexOf(byte, long) indexOf(b, 0)}. */
+  // 以...开始
   long indexOf(byte b) throws IOException;
 
   /**
@@ -490,6 +492,7 @@ public interface BufferedSource extends Source {
    *   Buffer payMeMoney = new Buffer().writeUtf8("Pay me $1,000,000.");
    *   assertFalse(payMeMoney.rangeEquals(0, simonSays));
    * }</pre>
+   * 从offset开始与bytes是否相等
    */
   boolean rangeEquals(long offset, ByteString bytes) throws IOException;
 
@@ -502,5 +505,6 @@ public interface BufferedSource extends Source {
       throws IOException;
 
   /** Returns an input stream that reads from this source. */
+  // 返回从源获取的inputStream
   InputStream inputStream();
 }

@@ -305,6 +305,7 @@ public interface BufferedSink extends Sink {
    *   assertEquals(0, b1.buffer().size());
    *   assertEquals(5, b0.buffer().size());
    * }</pre>
+   * 接口，flush削弱版
    */
   BufferedSink emit() throws IOException;
 
@@ -328,6 +329,7 @@ public interface BufferedSink extends Sink {
    *   assertEquals(     0, b1.buffer().size());
    *   assertEquals(16_384, b0.buffer().size()); // This example assumes 8192 byte segments.
    * }</pre>
+   * weaker削弱版
    */
   BufferedSink emitCompleteSegments() throws IOException;
 
