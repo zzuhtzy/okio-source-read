@@ -45,6 +45,7 @@ public final class Okio {
    * Returns a new source that buffers reads from {@code source}. The returned
    * source will perform bulk reads into its in-memory buffer. Use this wherever
    * you read a source to get an ergonomic and efficient access to data.
+   * 任何地方都可以使用，返回Source
    */
   public static BufferedSource buffer(Source source) {
     return new RealBufferedSource(source);
@@ -54,16 +55,19 @@ public final class Okio {
    * Returns a new sink that buffers writes to {@code sink}. The returned sink
    * will batch writes to {@code sink}. Use this wherever you write to a sink to
    * get an ergonomic and efficient access to data.
+   * 任何地方都可以使用，返回Sink
    */
   public static BufferedSink buffer(Sink sink) {
     return new RealBufferedSink(sink);
   }
 
   /** Returns a sink that writes to {@code out}. */
+  // 返回写到out的sink
   public static Sink sink(OutputStream out) {
     return sink(out, new Timeout());
   }
 
+  // 非对外接口
   private static Sink sink(final OutputStream out, final Timeout timeout) {
     if (out == null) throw new IllegalArgumentException("out == null");
     if (timeout == null) throw new IllegalArgumentException("timeout == null");
@@ -110,6 +114,7 @@ public final class Okio {
    * Returns a sink that writes to {@code socket}. Prefer this over {@link
    * #sink(OutputStream)} because this method honors timeouts. When the socket
    * write times out, the socket is asynchronously closed by a watchdog thread.
+   * 返回一个写到socket的sink，如果超时，socket被看门狗进程关闭
    */
   public static Sink sink(Socket socket) throws IOException {
     if (socket == null) throw new IllegalArgumentException("socket == null");
@@ -119,10 +124,12 @@ public final class Okio {
   }
 
   /** Returns a source that reads from {@code in}. */
+  // 返回从从in读数据的source
   public static Source source(InputStream in) {
     return source(in, new Timeout());
   }
 
+  // 非对外接口
   private static Source source(final InputStream in, final Timeout timeout) {
     if (in == null) throw new IllegalArgumentException("in == null");
     if (timeout == null) throw new IllegalArgumentException("timeout == null");
@@ -161,12 +168,14 @@ public final class Okio {
   }
 
   /** Returns a source that reads from {@code file}. */
+  // 从文件中读
   public static Source source(File file) throws FileNotFoundException {
     if (file == null) throw new IllegalArgumentException("file == null");
     return source(new FileInputStream(file));
   }
 
   /** Returns a source that reads from {@code path}. */
+  // 从路径读
   @IgnoreJRERequirement // Should only be invoked on Java 7+.
   public static Source source(Path path, OpenOption... options) throws IOException {
     if (path == null) throw new IllegalArgumentException("path == null");
@@ -174,18 +183,21 @@ public final class Okio {
   }
 
   /** Returns a sink that writes to {@code file}. */
+  // 写到文件
   public static Sink sink(File file) throws FileNotFoundException {
     if (file == null) throw new IllegalArgumentException("file == null");
     return sink(new FileOutputStream(file));
   }
 
   /** Returns a sink that appends to {@code file}. */
+  // 追加写到文件
   public static Sink appendingSink(File file) throws FileNotFoundException {
     if (file == null) throw new IllegalArgumentException("file == null");
     return sink(new FileOutputStream(file, true));
   }
 
   /** Returns a sink that writes to {@code path}. */
+  // 写到path
   @IgnoreJRERequirement // Should only be invoked on Java 7+.
   public static Sink sink(Path path, OpenOption... options) throws IOException {
     if (path == null) throw new IllegalArgumentException("path == null");
@@ -193,6 +205,7 @@ public final class Okio {
   }
 
   /** Returns a sink that writes nowhere. */
+  // 没地方写的sink
   public static Sink blackhole() {
     return new Sink() {
       @Override public void write(Buffer source, long byteCount) throws IOException {
@@ -213,6 +226,7 @@ public final class Okio {
    * Returns a source that reads from {@code socket}. Prefer this over {@link
    * #source(InputStream)} because this method honors timeouts. When the socket
    * read times out, the socket is asynchronously closed by a watchdog thread.
+   * 从socket读，超时时socket自动关闭
    */
   public static Source source(Socket socket) throws IOException {
     if (socket == null) throw new IllegalArgumentException("socket == null");
@@ -221,6 +235,7 @@ public final class Okio {
     return timeout.source(source);
   }
 
+  // 超时
   private static AsyncTimeout timeout(final Socket socket) {
     return new AsyncTimeout() {
       @Override protected IOException newTimeoutException(IOException cause) {
