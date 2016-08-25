@@ -24,7 +24,7 @@ final class Util {
   private Util() {
   }
 
-  // 确保：size - offset > byteCount
+  // 校验
   public static void checkOffsetAndCount(long size, long offset, long byteCount) {
     if ((offset | byteCount) < 0 || offset > size || size - offset < byteCount) {
       throw new ArrayIndexOutOfBoundsException(
